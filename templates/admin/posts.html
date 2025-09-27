@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Posts - FINBlog Admin{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Manage Posts</h1>
+                <a href="{{ url_for('new_post') }}" 
+                   class="btn btn-primary"
+                   title="Create new blog post"
+                   aria-label="Create new blog post">
+                    <i class="fas fa-plus me-2" aria-hidden="true"></i>New Post
+                </a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Views</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for post in posts %}
+                                <tr>
+                                    <td>
+                                        <div class="post-info-container">
+                                            {% if post.featured_image %}
+                                            <div class="post-thumbnail-wrapper">
+                                                <img src="{{ url_for('static', filename='uploads/' + post.featured_image) }}" 
+                                                     alt="Preview image for post: {{ post.title }}" 
+                                                     class="post-thumbnail"
+                                                     loading="lazy">
+                                            </div>
+                                            {% endif %}
+                                            <div class="post-title-wrapper">
+                                                <a href="{{ url_for('blog_post', slug=post.slug) }}" 
+                                                   class="post-title-link"
+                                                   title="View post: {{ post.title }}"
+                                                   aria-label="View full post: {{ post.title }}">
+                                                    <span class="post-title-text">{{ post.title }}</span>
+                                                </a>
+                                                {% if post.is_featured %}
+                                                <span class="badge bg-warning badge-featured" role="status" aria-label="Featured post">Featured</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ post.category }}</span>
+                                    </td>
+                                    <td>
+                                        {% if post.is_published %}
+                                            <span class="badge bg-success">Published</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Draft</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ post.views }}</td>
+                                    <td>{{ post.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <div class="post-actions">
+                                            <div class="btn-group" role="group" aria-label="Actions for post: {{ post.title }}">
+                                                <a href="{{ url_for('edit_post', id=post.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary post-action-btn"
+                                                   role="button"
+                                                   title="Edit post: {{ post.title }}"
+                                                   aria-label="Edit post: {{ post.title }}">
+                                                    <i class="fas fa-edit post-action-icon" aria-hidden="true"></i>
+                                                    <span class="post-action-text">Edit</span>
+                                                </a>
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-danger post-action-btn" 
+                                                        data-action="delete"
+                                                        data-post-id="{{ post.id }}"
+                                                        data-post-title="{{ post.title }}"
+                                                        title="Delete post: {{ post.title }}"
+                                                        aria-label="Delete post: {{ post.title }}">
+                                                    <i class="fas fa-trash post-action-icon" aria-hidden="true"></i>
+                                                    <span class="post-action-text">Delete</span>
+                                                </button>
+                                            </div>
+                                            <form id="delete-form-{{ post.id }}" 
+                                                  action="{{ url_for('delete_post', id=post.id) }}" 
+                                                  method="POST" 
+                                                  class="post-delete-form"
+                                                  aria-hidden="true"
+                                                  tabindex="-1">
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+    'use strict';
+
+    /**
+     * Handle post deletion
+     * @param {HTMLElement} button - The delete button element
+     * @returns {void}
+     */
+    function handlePostDeletion(button) {
+        var postId = button.dataset.postId;
+        var postTitle = button.dataset.postTitle;
+        
+        if (!postId || !postTitle) {
+            console.error('Missing required data attributes');
+            return;
+        }
+
+        var confirmMessage = 'Are you sure you want to delete "' + postTitle + '"? This action cannot be undone.';
+        
+        if (window.confirm(confirmMessage)) {
+            var form = document.getElementById('delete-form-' + postId);
+            if (form && form instanceof HTMLFormElement) {
+                form.submit();
+            } else {
+                console.error('Delete form not found');
+            }
+        }
+    }
+
+    /**
+     * Initialize post management functionality
+     * @returns {void}
+     */
+    function initPostManagement() {
+        document.querySelectorAll('[data-action="delete"]').forEach(function(button) {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                handlePostDeletion(this);
+            });
+        });
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPostManagement);
+    } else {
+        initPostManagement();
+    }
+})();
+</script>
+{% endblock %}

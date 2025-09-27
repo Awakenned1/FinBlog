@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - FINBlog Admin{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_posts') }}">Posts</a></li>
+                    <li class="breadcrumb-item active">{{ title }}</li>
+                </ol>
+            </nav>
+
+            <h1 class="mb-4">{{ title }}</h1>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" enctype="multipart/form-data">
+                {{ form.csrf_token }}
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control") }}
+                            {% if form.title.errors %}
+                                {% for error in form.title.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.excerpt.label(class="form-label") }}
+                            {{ form.excerpt(class="form-control", rows=3) }}
+                            <small class="text-muted">Brief summary of the post (optional, max 300 characters)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.content.label(class="form-label") }}
+                            {{ form.content(class="form-control markdown-editor", rows=20) }}
+                            {% if form.content.errors %}
+                                {% for error in form.content.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                            <small class="text-muted">Use Markdown for formatting</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Post Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.category.label(class="form-label") }}
+                                    {{ form.category(class="form-select") }}
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.tags.label(class="form-label") }}
+                                    {{ form.tags(class="form-control") }}
+                                    <small class="text-muted">Separate tags with commas</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ form.featured_image.label(class="form-label") }}
+                                    {{ form.featured_image(class="form-control") }}
+                                    {% if post and post.featured_image %}
+                                        <div class="mt-2">
+                                            <img src="{{ url_for('static', filename='uploads/' + post.featured_image) }}" 
+                                                 alt="Current featured image for {{ post.title }}" 
+                                                 class="img-thumbnail post-thumbnail-preview">
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_published(class="form-check-input") }}
+                                        {{ form.is_published.label(class="form-check-label") }}
+                                    </div>
+                                    <small class="text-muted">If checked, the post will be visible to readers</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.is_featured(class="form-check-input") }}
+                                        {{ form.is_featured.label(class="form-check-label") }}
+                                    </div>
+                                    <small class="text-muted">Featured posts appear on the homepage</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('admin_posts') }}" class="btn btn-secondary">Cancel</a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Include a Markdown editor (e.g., EasyMDE) -->
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<script>
+    const easyMDE = new EasyMDE({
+        element: document.querySelector('.markdown-editor'),
+        spellChecker: false,
+        autosave: {
+            enabled: true,
+            uniqueId: "post_content"
+        }
+    });
+</script>
+{% endblock %}
